@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
 
 <dom-module id="fs-add-person">
   <template>
@@ -8,9 +9,21 @@
       :host {
         display: block;
       }
+      
+      .name {
+        display: flex;
+      }
+      
+      .name > paper-input:last-child {
+        margin-left: 16px;
+      }
     </style>
     <paper-dialog id="dialog" opened="{{opened}}" modal>
       <h2>Add A Person</h2>
+      <div class="name">
+        <paper-input label="First Names" value="{{firstNames}}"></paper-input>
+        <paper-input label="Last Names" value="{{lastNames}}"></paper-input>
+      </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
       </div>
@@ -33,7 +46,10 @@
           opened: {
             type: Boolean,
             value: false
-          }
+          },
+          
+          firstNames: String,
+          lastNames: String
         };
       }
       
