@@ -1,0 +1,36 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="fs-add-person">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]!</h2>
+  </template>
+
+  <script>
+    /**
+     * `fs-add-person`
+     * 
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class FsAddPerson extends Polymer.Element {
+      static get is() { return 'fs-add-person'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'fs-add-person'
+          }
+        };
+      }
+    }
+
+    window.customElements.define(FsAddPerson.is, FsAddPerson);
+  </script>
+</dom-module>
