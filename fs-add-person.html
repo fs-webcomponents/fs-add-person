@@ -1,4 +1,6 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
 
 <dom-module id="fs-add-person">
   <template>
@@ -7,7 +9,12 @@
         display: block;
       }
     </style>
-    <h2>Hello [[prop1]]!</h2>
+    <paper-dialog id="dialog" opened="{{opened}}" modal>
+      <h2>Add A Person</h2>
+      <div class="buttons">
+        <paper-button on-tap="close">Cancel</paper-button>
+      </div>
+    </paper-dialog>
   </template>
 
   <script>
@@ -23,11 +30,19 @@
       static get is() { return 'fs-add-person'; }
       static get properties() {
         return {
-          prop1: {
-            type: String,
-            value: 'fs-add-person'
+          opened: {
+            type: Boolean,
+            value: false
           }
         };
+      }
+      
+      open() {
+        this.opened = true;
+      }
+      
+      close() {
+        this.opened = false;
       }
     }
 
