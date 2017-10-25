@@ -2,6 +2,8 @@
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
 
 <dom-module id="fs-add-person">
   <template>
@@ -17,12 +19,41 @@
       .name > paper-input:last-child {
         margin-left: 16px;
       }
+      
+      .gender-living {
+        display: flex;
+      }
+      
+      .gender-living > div {
+        flex: 1;
+      }
+      
+      .gender paper-radio-button {
+        display: block;
+      }
     </style>
     <paper-dialog id="dialog" opened="{{opened}}" modal>
       <h2>Add A Person</h2>
       <div class="name">
         <paper-input label="First Names" value="{{firstNames}}"></paper-input>
         <paper-input label="Last Names" value="{{lastNames}}"></paper-input>
+      </div>
+      <div class="gender-living">
+        <div class="gender">
+          <div>Gender</div>
+          <paper-radio-group selected="{{gender}}">
+            <paper-radio-button name="male">Male</paper-radio-button>
+            <paper-radio-button name="female">Female</paper-radio-button>
+            <paper-radio-button name="unknown">Unknown</paper-radio-button>
+          </paper-radio-group>
+        </div>
+        <div>
+          <div>Living</div>
+          <paper-radio-group on-iron-select="_livingSelection">
+            <paper-radio-button name="living">Living</paper-radio-button>
+            <paper-radio-button name="deceased">Deceased</paper-radio-button>
+          </paper-radio-group>
+        </div>
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
@@ -48,8 +79,14 @@
             value: false
           },
           
+          /** 
+           * Do these need to be public? Do we want to allow these value to
+           * be set and read?
+           */
           firstNames: String,
-          lastNames: String
+          lastNames: String,
+          gender: String,
+          living: Boolean
         };
       }
       
@@ -59,6 +96,16 @@
       
       close() {
         this.opened = false;
+      }
+      
+      /**
+       * We use this event listener to calculate the value of living,
+       * as opposed to just doing two-way binding, because paper-radio-group
+       * doesn't support boolean values so we have to calculate the
+       * value ourself.
+       */
+      _livingSelection(e) {
+        this.living = e.detail.item.name === 'living';
       }
     }
 
