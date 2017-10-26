@@ -4,6 +4,7 @@
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="../fs-person-gender/fs-person-gender-selector.html">
 <link rel="import" href="../fs-date/fs-date.html">
 <link rel="import" href="../fs-place/fs-place.html">
@@ -48,6 +49,24 @@
         background-color: var(--paper-blue-500);
         color: #fff;
       }
+      
+      #loader {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(230, 230, 230, .6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+      }
+      
+      [hidden] {
+        display: none !important;
+      }
     </style>
     <paper-dialog id="dialog" opened="{{opened}}" modal>
       <h2>Add A Person</h2>
@@ -79,6 +98,9 @@
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
         <paper-button id="next-btn" raised disabled="[[!_searchReady]]" on-tap="_search">Next</paper-button>
+      </div>
+      <div id="loader" hidden="[[!_loading]]">
+        <paper-spinner-lite active class="blue"></paper-spinner-lite>
       </div>
     </paper-dialog>
     <fs-request 
