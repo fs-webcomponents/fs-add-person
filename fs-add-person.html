@@ -68,8 +68,8 @@
         <fs-place edit place="{{birthPlace}}" label="Birth Place"></fs-place>
       </div>
       <div class="row vital">
-        <fs-date edit date="{{deathDate}}" label="Death Date"></fs-date>
-        <fs-place edit place="{{deathPlace}}" label="Death Place"></fs-place>
+        <fs-date edit disabled="{{_deathDisabled}}" date="{{deathDate}}" label="Death Date"></fs-date>
+        <fs-place edit disabled="{{_deathDisabled}}" place="{{deathPlace}}" label="Death Place"></fs-place>
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
@@ -106,7 +106,13 @@
           birthDate: Object,
           birthPlace: Object,
           deathDate: Object,
-          deathPlace: Object
+          deathPlace: Object,
+          
+          _deathDisabled: {
+            type: Boolean,
+            value: true,
+            computed: '_disableDeath(living)'
+          }
         };
       }
       
@@ -126,6 +132,13 @@
        */
       _livingSelection(e) {
         this.living = e.detail.item.name === 'living';
+      }
+      
+      /**
+       * Disable death date and place when the person is not marked as deceased.
+       */
+      _disableDeath(living) {
+        return living !== false;
       }
     }
 
