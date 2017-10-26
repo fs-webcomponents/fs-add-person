@@ -43,6 +43,11 @@
         flex: 2;
         margin-left: 16px;
       }
+      
+      #next-btn:not([disabled]) {
+        background-color: var(--paper-blue-500);
+        color: #fff;
+      }
     </style>
     <paper-dialog id="dialog" opened="{{opened}}" modal>
       <h2>Add A Person</h2>
@@ -73,6 +78,7 @@
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
+        <paper-button id="next-btn" raised disabled="[[!_searchReady]]" on-tap="next">Next</paper-button>
       </div>
     </paper-dialog>
   </template>
@@ -108,10 +114,18 @@
           deathDate: Object,
           deathPlace: Object,
           
+          /** Whether the death inputs should be disabled */
           _deathDisabled: {
             type: Boolean,
             value: true,
             computed: '_disableDeath(living)'
+          },
+          
+          /** Whether we have enough data to search for duplicates */
+          _searchReady: {
+            type: Boolean,
+            value: false,
+            computed: '_readyToSearch(firstNames, lastNames, gender, living)'
           }
         };
       }
@@ -139,6 +153,13 @@
        */
       _disableDeath(living) {
         return living !== false;
+      }
+      
+      /**
+       * Calculate whether we have enough information to proceed to the search step.
+       */
+      _readyToSearch(firstNames, lastNames, gender, living) {
+        return (firstNames || lastNames) && gender && living !== undefined;
       }
     }
 
