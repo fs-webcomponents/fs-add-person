@@ -78,9 +78,14 @@
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
-        <paper-button id="next-btn" raised disabled="[[!_searchReady]]" on-tap="next">Next</paper-button>
+        <paper-button id="next-btn" raised disabled="[[!_searchReady]]" on-tap="_search">Next</paper-button>
       </div>
     </paper-dialog>
+    <fs-request 
+      id="request"
+      loading="{{_loading}}"
+      headers='{"Accept":"application/x-gedcomx-atom+json"}'
+      on-response="_handleSearchResponse"></fs-request>
   </template>
 
   <script>
@@ -114,6 +119,9 @@
           deathDate: Object,
           deathPlace: Object,
           
+          /** Whether the search request is loading */
+          _loading: Boolean,
+          
           /** Whether the death inputs should be disabled */
           _deathDisabled: {
             type: Boolean,
@@ -136,6 +144,59 @@
       
       close() {
         this.opened = false;
+      }
+      
+      /**
+       * Issue the API request for finding possible duplicates
+       */
+      _search() {
+        this.$.request.url = this._calculateSearchUrl();
+        this.$.request.generateRequest();
+      }
+      
+      /**
+       * Calculate the URL for searching for matches. The matches query API
+       * requires a lot of data so if we don't have enough then we'll use the
+       * regular search API.
+       */
+      _calculateSearchUrl() {
+        const queryParts = {};
+        if(this.firstNames) {
+          queryParts.givenName = this.firstNames;
+        }
+        if(this.lastNames) {
+          queryParts.surname = this.lastNames;
+        }
+        switch(this.gender) {
+          case 'http://gedcomx.org/Male':
+            queryParts.gender = 'male';
+            break;
+          case 'http://gedcomx.org/Female':
+            queryParts.gender = 'female';
+            break;
+        }
+        if(this.birthDate) {
+          queryParts.birthDate = this.birthDate.original;
+        }
+        if(this.birthPlace) {
+          queryParts.birthPlace = this.birthPlace.original;
+        }
+        if(this.deathDate) {
+          queryParts.deathDate = this.deathDate.original;
+        }
+        if(this.deathPlace) {
+          queryParts.deathPlace = this.deathPlace.original;
+        }
+        const query = Object.keys(queryParts)
+          .map((key) => `${key}:"${queryParts[key]}"`)
+          .join(' ');
+        const match = this.firstNames && this.lastNames && this.gender && this.living !== undefined
+          && this.birthDate && this.deathDate && this.deathPlace;
+        return `/platform/tree/${match ? 'match' : 'search'}?q=${query}`;
+      }
+      
+      _handleSearchResponse(e) {
+        const response = e.detail.response;
       }
       
       /**
