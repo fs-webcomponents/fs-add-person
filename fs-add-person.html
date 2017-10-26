@@ -70,34 +70,42 @@
     </style>
     <paper-dialog id="dialog" opened="{{opened}}" modal>
       <h2>Add A Person</h2>
-      <div class="row name">
-        <paper-input label="First Names" value="{{firstNames}}"></paper-input>
-        <paper-input label="Last Names" value="{{lastNames}}"></paper-input>
-      </div>
-      <div class="row gender-living">
-        <div class="gender">
-          <div>Gender</div>
-          <fs-person-gender-selector gender="{{gender}}"></fs-person-gender-selector>
+      <div hidden="[[!_showDataStep(_step)]]">
+        <div class="row name">
+          <paper-input label="First Names" value="{{firstNames}}"></paper-input>
+          <paper-input label="Last Names" value="{{lastNames}}"></paper-input>
         </div>
-        <div>
-          <div>Living</div>
-          <paper-radio-group on-iron-select="_livingSelection">
-            <paper-radio-button name="living">Living</paper-radio-button>
-            <paper-radio-button name="deceased">Deceased</paper-radio-button>
-          </paper-radio-group>
+        <div class="row gender-living">
+          <div class="gender">
+            <div>Gender</div>
+            <fs-person-gender-selector gender="{{gender}}"></fs-person-gender-selector>
+          </div>
+          <div>
+            <div>Living</div>
+            <paper-radio-group on-iron-select="_livingSelection">
+              <paper-radio-button name="living">Living</paper-radio-button>
+              <paper-radio-button name="deceased">Deceased</paper-radio-button>
+            </paper-radio-group>
+          </div>
+        </div>
+        <div class="row vital">
+          <fs-date edit date="{{birthDate}}" label="Birth Date"></fs-date>
+          <fs-place edit place="{{birthPlace}}" label="Birth Place"></fs-place>
+        </div>
+        <div class="row vital">
+          <fs-date edit disabled="{{_deathDisabled}}" date="{{deathDate}}" label="Death Date"></fs-date>
+          <fs-place edit disabled="{{_deathDisabled}}" place="{{deathPlace}}" label="Death Place"></fs-place>
         </div>
       </div>
-      <div class="row vital">
-        <fs-date edit date="{{birthDate}}" label="Birth Date"></fs-date>
-        <fs-place edit place="{{birthPlace}}" label="Birth Place"></fs-place>
-      </div>
-      <div class="row vital">
-        <fs-date edit disabled="{{_deathDisabled}}" date="{{deathDate}}" label="Death Date"></fs-date>
-        <fs-place edit disabled="{{_deathDisabled}}" place="{{deathPlace}}" label="Death Place"></fs-place>
+      <div hidden="[[!_showResultsStep(_step)]]">
+        <p>Results</p>
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
-        <paper-button id="next-btn" raised disabled="[[!_searchReady]]" on-tap="_search">Next</paper-button>
+        <paper-button id="next-btn" 
+          raised disabled="[[!_searchReady]]"
+          hidden="[[!_showDataStep(_step)]]"
+          on-tap="_search">Next</paper-button>
       </div>
       <div id="loader" hidden="[[!_loading]]">
         <paper-spinner-lite active class="blue"></paper-spinner-lite>
@@ -156,6 +164,12 @@
             type: Boolean,
             value: false,
             computed: '_readyToSearch(firstNames, lastNames, gender, living)'
+          },
+          
+          /** Which step or page we are on */
+          _step: {
+            type: String,
+            value: 'data'
           }
         };
       }
@@ -219,6 +233,8 @@
       
       _handleSearchResponse(e) {
         const response = e.detail.response;
+        // Process results
+        this._step = 'results';
       }
       
       /**
@@ -243,6 +259,20 @@
        */
       _readyToSearch(firstNames, lastNames, gender, living) {
         return (firstNames || lastNames) && gender && living !== undefined;
+      }
+      
+      /**
+       * Whether to show the data step
+       */
+      _showDataStep(_step) {
+        return _step === 'data';
+      }
+      
+      /**
+       * Whether to show the results step
+       */
+      _showResultsStep(_step) {
+        return _step === 'results';
       }
     }
 
