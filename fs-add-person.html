@@ -5,6 +5,8 @@
 <link rel="import" href="../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../fs-person-gender/fs-person-gender-selector.html">
+<link rel="import" href="../fs-date/fs-date.html">
+<link rel="import" href="../fs-place/fs-place.html">
 
 <dom-module id="fs-add-person">
   <template>
@@ -13,16 +15,16 @@
         display: block;
       }
       
-      .name {
+      .row {
         display: flex;
+      }
+      
+      .name > paper-input {
+        width: 100%;
       }
       
       .name > paper-input:last-child {
         margin-left: 16px;
-      }
-      
-      .gender-living {
-        display: flex;
       }
       
       .gender-living > div {
@@ -32,14 +34,23 @@
       .gender paper-radio-button {
         display: block;
       }
+      
+      .vital fs-date {
+        flex: 1;
+      }
+      
+      .vital fs-place {
+        flex: 2;
+        margin-left: 16px;
+      }
     </style>
     <paper-dialog id="dialog" opened="{{opened}}" modal>
       <h2>Add A Person</h2>
-      <div class="name">
+      <div class="row name">
         <paper-input label="First Names" value="{{firstNames}}"></paper-input>
         <paper-input label="Last Names" value="{{lastNames}}"></paper-input>
       </div>
-      <div class="gender-living">
+      <div class="row gender-living">
         <div class="gender">
           <div>Gender</div>
           <fs-person-gender-selector gender="{{gender}}"></fs-person-gender-selector>
@@ -51,6 +62,14 @@
             <paper-radio-button name="deceased">Deceased</paper-radio-button>
           </paper-radio-group>
         </div>
+      </div>
+      <div class="row vital">
+        <fs-date edit date="{{birthDate}}" label="Birth Date"></fs-date>
+        <fs-place edit place="{{birthPlace}}" label="Birth Place"></fs-place>
+      </div>
+      <div class="row vital">
+        <fs-date edit date="{{deathDate}}" label="Death Date"></fs-date>
+        <fs-place edit place="{{deathPlace}}" label="Death Place"></fs-place>
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
@@ -83,7 +102,11 @@
           firstNames: String,
           lastNames: String,
           gender: String,
-          living: Boolean
+          living: Boolean,
+          birthDate: Object,
+          birthPlace: Object,
+          deathDate: Object,
+          deathPlace: Object
         };
       }
       
