@@ -69,12 +69,18 @@
       
       paper-dialog-scrollable {
         width: 800px;
-        height: 400px;
+        height: 250px;
         margin: 0 -24px;
       }
       
       fs-add-person-result {
-        border-top: 1px solid #e0e0e0;
+        border-width: 1px 1px 0 1px;
+        border-style: solid;
+        border-color: #e0e0e0;
+      }
+      
+      fs-add-person-result:last-of-type {
+        border-bottom: 1px solid #e0e0e0;
       }
       
       [hidden] {
@@ -111,7 +117,9 @@
         </div>
       </div>
       <div hidden="[[!_showResultsStep(_step)]]">
-        <fs-person-summary id="new-summary"></fs-person-summary>
+        <h3>You Entered</h3>
+        <fs-add-person-result gedcomx="{{_newGedcomx}}"></fs-add-person-result>
+        <h3>Possible Matches</h3>
         <paper-dialog-scrollable id="results-scroll">
           <template is="dom-repeat" items="{{_searchResults}}">
             <fs-add-person-result gedcomx="{{item.content.gedcomx}}"></fs-add-person-result>
@@ -194,7 +202,14 @@
             value: function(){
               return [];
             }
-          }
+          },
+          
+          /** 
+           * Represents information about the new person. This is used both for
+           * display via fs-add-person-result and to send to the server when 
+           * creating the person.
+           */
+          _newGedcomx: Object
         };
       }
       
@@ -217,6 +232,7 @@
       _search() {
         this.$.request.url = this._calculateSearchUrl();
         this.$.request.generateRequest();
+        this._newGedcomx = this._calculateNewGedcomx();
       }
       
       /**
@@ -273,6 +289,75 @@
           this._searchResults = response.data.entries;
         }
         this._step = 'results';
+      }
+      
+      /**
+       * Generate a gedcomx object reprsenting the new person
+       */
+      _calculateNewGedcomx() {
+        const person = {
+          living: this.living,
+          facts: [],
+          display: {}
+        };
+        
+        // Name
+        const nameParts = [];
+        if(this.firstNames) {
+          nameParts.push({
+            type: 'http://gedcomx.org/Given',
+            value: this.firstNames
+          });
+        }
+        if(this.lastNames) {
+          nameParts.push({
+            type: 'http://gedcomx.org/Surname',
+            value: this.lastNames
+          });
+        }
+        person.names = [{
+          nameForms: [{
+            parts: nameParts
+          }]
+        }];
+        person.display.name = nameParts.map(p => p.value).join(' ');
+        
+        // Gender
+        person.gender = { type: this.gender };
+        
+        // Birth
+        if(this.birthDate || this.birthPlace) {
+          const birth = {
+            type: 'http://gedcomx.org/Birth'
+          };
+          if(this.birthDate) {
+            birth.date = this.birthDate;
+            person.display.birthDate = this.birthDate;
+          }
+          if(this.birthPlace) {
+            birth.place = this.birthPlace;
+            person.display.birthPlace = this.birthPlace;
+          }
+          person.facts.push(birth);
+        }
+        
+        // Death
+        if(this.deathDate || this.deathPlace) {
+          const death = {
+            type: 'http://gedcomx.org/Death'
+          };
+          if(this.deathDate) {
+            death.date = this.deathDate;
+            person.display.deathDate = this.deathDate;
+          }
+          if(this.deathPlace) {
+            death.place = this.deathPlace;
+            person.display.deathPlace = this.deathPlace;
+          }
+          person.facts.push(death);
+        }
+        
+        return { persons: [ person ] };
       }
       
       /**
