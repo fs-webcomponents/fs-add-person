@@ -48,7 +48,8 @@
         margin-left: 16px;
       }
       
-      #next-btn:not([disabled]) {
+      #next-btn:not([disabled]),
+      .result-button {
         background-color: var(--paper-blue-500);
         color: #fff;
       }
@@ -118,11 +119,15 @@
       </div>
       <div hidden="[[!_showResultsStep(_step)]]">
         <h3>You Entered</h3>
-        <fs-add-person-result gedcomx="{{_newGedcomx}}"></fs-add-person-result>
+        <fs-add-person-result gedcomx="{{_newGedcomx}}">
+          <paper-button class="result-button" slot="buttons" on-tap="_createNewPerson">Create New Person</paper-button>
+        </fs-add-person-result>
         <h3>Possible Matches</h3>
         <paper-dialog-scrollable id="results-scroll">
           <template is="dom-repeat" items="{{_searchResults}}">
-            <fs-add-person-result gedcomx="{{item.content.gedcomx}}"></fs-add-person-result>
+            <fs-add-person-result gedcomx="{{item.content.gedcomx}}">
+              <paper-button class="result-button" slot="buttons" on-tap="_selectPerson">Add Person</paper-button>
+            </fs-add-person-result>
           </template>
         </paper-dialog-scrollable>
       </div>
@@ -396,6 +401,21 @@
        */
       _showResultsStep(_step) {
         return _step === 'results';
+      }
+      
+      /**
+       * Create the new person
+       */
+      _createNewPerson() {
+        console.log('_createNewPerson');
+      }
+      
+      /**
+       * Select an existing person
+       */
+      _selectPerson(e) {
+        const selectedPersonId = e.model.item.content.gedcomx.persons[0].id;
+        console.log('_selectPerson', selectedPersonId);
       }
     }
 
