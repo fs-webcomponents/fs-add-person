@@ -47,29 +47,29 @@
       <div class="id">{{person.id}}</div>
     </div>
     <div class="col vitals-col">
-      <div class="vital">
+      <div class="vital" hidden="[[!_displayBirth(person)]]">
         <div class="label">Birth</div>
         <div class="date">{{person.display.birthDate}}</div>
         <div class="place" title="{{person.display.birthPlace}}">{{person.display.birthPlace}}</div>
       </div>
       <div class="vital">
-        <div class="label">Death</div>
+        <div class="label" hidden="[[!_displayDeath(person)]]">Death</div>
         <div class="date">{{person.display.deathDate}}</div>
         <div class="place" title="{{person.display.birthPlace}}">{{person.display.deathPlace}}</div>
       </div>
     </div>
     <div class="col relatives-col">
-      <div class="relative">
+      <div class="relative" hidden="[[!_displaySpouse]]">
         <div class="label">Spouse</div>
         <div class="name">{{spouse.display.name}}</div>
         <div class="id">{{spouse.id}}</div>
       </div>
-      <div class="relative">
+      <div class="relative" hidden="[[!_displayFather]]">
         <div class="label">Father</div>
         <div class="name">{{father.display.name}}</div>
         <div class="id">{{father.id}}</div>
       </div>
-      <div class="relative">
+      <div class="relative" hidden="[[!_displayMother]]">
         <div class="label">Mother</div>
         <div class="name">{{mother.display.name}}</div>
         <div class="id">{{mother.id}}</div>
@@ -98,7 +98,23 @@
           person: Object,
           spouse: Object,
           father: Object,
-          mother: Object
+          mother: Object,
+          
+          _displaySpouse: {
+            type: Boolean,
+            value: false,
+            computed: '_displayPerson(spouse)'
+          },
+          _displayFather: {
+            type: Boolean,
+            value: false,
+            computed: '_displayPerson(father)'
+          },
+          _displayMother: {
+            type: Boolean,
+            value: false,
+            computed: '_displayPerson(mother)'
+          }
         };
       }
       
@@ -138,6 +154,18 @@
             this.mother = parents.find((person) => person.gender.type === 'http://gedcomx.org/Female');
           }
         }
+      }
+      
+      _displayBirth(person) {
+        return person.display && (person.display.birthDate || person.display.birthPlace);
+      }
+      
+      _displayDeath(person) {
+        return person.display && (person.display.deathDate || person.display.deathPlace);
+      }
+      
+      _displayPerson(person) {
+        return !!person;
       }
     }
 
