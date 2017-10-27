@@ -126,7 +126,7 @@
         <paper-dialog-scrollable id="results-scroll">
           <template is="dom-repeat" items="{{_searchResults}}">
             <fs-add-person-result gedcomx="{{item.content.gedcomx}}">
-              <paper-button class="result-button" slot="buttons" on-tap="_selectPerson">Add Person</paper-button>
+              <paper-button class="result-button" slot="buttons" on-tap="_selectSearchResult">Add Person</paper-button>
             </fs-add-person-result>
           </template>
         </paper-dialog-scrollable>
@@ -321,6 +321,7 @@
           });
         }
         person.names = [{
+          preferred: true,
           nameForms: [{
             parts: nameParts
           }]
@@ -407,15 +408,35 @@
        * Create the new person
        */
       _createNewPerson() {
-        console.log('_createNewPerson');
+        this.loading = true;
+        const request = new FSRequest();
+        request.url = '/platform/tree/persons';
+        request.method = 'POST';
+        request.body = this._newGedcomx;
+        request.addEventListener('response', (e) => {
+          this.loading = false;
+          const response = e.detail.response;
+          if(response.statusCode === 201) {
+            this._selectPersonId(response.headers['x-entity-id']);
+          }
+        });
+        request.ready();
+        request.generateRequest();
       }
       
       /**
-       * Select an existing person
+       * Select an existing person from a search result
        */
-      _selectPerson(e) {
-        const selectedPersonId = e.model.item.content.gedcomx.persons[0].id;
-        console.log('_selectPerson', selectedPersonId);
+      _selectSearchResult(e) {
+        this._selectPersonId(e.model.item.content.gedcomx.persons[0].id);
+      }
+      
+      /**
+       * Set the selected person ID and initiate the process of creating relationships
+       */
+      _selectPersonId(personId) {
+        this._selectedId = personId;
+        console.log('selected', personId);
       }
     }
 

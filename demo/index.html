@@ -30,6 +30,13 @@
           <fs-add-person id="basic"></fs-add-person>
         </template>
       </demo-snippet>
+      <h3>Pre-fill some of the data. You shouldn't normally need to do this but it makes testing easier</h3>
+      <demo-snippet>
+        <template>
+          <paper-button raised onclick="prefill.open()">Open</paper-button>
+          <fs-add-person id="prefill" first-names="Joey" gender="http://gedcomx.org/Male" living="false"></fs-add-person>
+        </template>
+      </demo-snippet>
     </div>
   </body>
 </html>
