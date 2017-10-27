@@ -1,13 +1,16 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../paper-spinner/paper-spinner-lite.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="../fs-person-gender/fs-person-gender-selector.html">
 <link rel="import" href="../fs-date/fs-date.html">
 <link rel="import" href="../fs-place/fs-place.html">
+<link rel="import" href="fs-add-person-result.html">
 
 <dom-module id="fs-add-person">
   <template>
@@ -64,6 +67,16 @@
         padding: 0;
       }
       
+      paper-dialog-scrollable {
+        width: 800px;
+        height: 400px;
+        margin: 0 -24px;
+      }
+      
+      fs-add-person-result {
+        border-top: 1px solid #e0e0e0;
+      }
+      
       [hidden] {
         display: none !important;
       }
@@ -98,14 +111,17 @@
         </div>
       </div>
       <div hidden="[[!_showResultsStep(_step)]]">
-        <p>Results</p>
+        <fs-person-summary id="new-summary"></fs-person-summary>
+        <paper-dialog-scrollable id="results-scroll">
+          <template is="dom-repeat" items="{{_searchResults}}">
+            <fs-add-person-result gedcomx="{{item.content.gedcomx}}"></fs-add-person-result>
+          </template>
+        </paper-dialog-scrollable>
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
-        <paper-button id="next-btn" 
-          raised disabled="[[!_searchReady]]"
-          hidden="[[!_showDataStep(_step)]]"
-          on-tap="_search">Next</paper-button>
+        <paper-button id="next-btn" raised disabled="[[!_searchReady]]" hidden="[[!_showDataStep(_step)]]" on-tap="_search">Next</paper-button>
+        <paper-button raised hidden="[[!_showResultsStep(_step)]]" on-tap="_refine">Refine Search</paper-button>
       </div>
       <div id="loader" hidden="[[!_loading]]">
         <paper-spinner-lite active class="blue"></paper-spinner-lite>
@@ -170,8 +186,21 @@
           _step: {
             type: String,
             value: 'data'
+          },
+          
+          /** List of search results (possible matches) */
+          _searchResults: {
+            type: Array,
+            value: function(){
+              return [];
+            }
           }
         };
+      }
+      
+      ready() {
+        super.ready();
+        this.$['results-scroll'].dialogElement = this.$.dialog;
       }
       
       open() {
@@ -188,6 +217,13 @@
       _search() {
         this.$.request.url = this._calculateSearchUrl();
         this.$.request.generateRequest();
+      }
+      
+      /**
+       * Return to the data step
+       */
+      _refine() {
+        this._step = 'data';
       }
       
       /**
@@ -233,7 +269,9 @@
       
       _handleSearchResponse(e) {
         const response = e.detail.response;
-        // Process results
+        if(response.data && response.data) {
+          this._searchResults = response.data.entries;
+        }
         this._step = 'results';
       }
       
