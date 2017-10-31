@@ -429,11 +429,11 @@
           };
           if(this.birthDate) {
             birth.date = this.birthDate;
-            person.display.birthDate = this.birthDate;
+            person.display.birthDate = this.birthDate.original;
           }
           if(this.birthPlace) {
             birth.place = this.birthPlace;
-            person.display.birthPlace = this.birthPlace;
+            person.display.birthPlace = this.birthPlace.original;
           }
           person.facts.push(birth);
         }
@@ -445,11 +445,11 @@
           };
           if(this.deathDate) {
             death.date = this.deathDate;
-            person.display.deathDate = this.deathDate;
+            person.display.deathDate = this.deathDate.original;
           }
           if(this.deathPlace) {
             death.place = this.deathPlace;
-            person.display.deathPlace = this.deathPlace;
+            person.display.deathPlace = this.deathPlace.original;
           }
           person.facts.push(death);
         }
