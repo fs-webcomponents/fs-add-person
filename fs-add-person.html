@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/lib/elements/dom-if.html">
 <link rel="import" href="../polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-button/paper-button.html">
@@ -84,6 +85,15 @@
         border-bottom: 1px solid #e0e0e0;
       }
       
+      .no-results-message {
+        color: #666;
+        margin: 16px 0;
+      }
+      
+      .label {
+        font-weight: bold;
+      }
+      
       [hidden] {
         display: none !important;
       }
@@ -122,14 +132,20 @@
         <fs-add-person-result gedcomx="{{_newGedcomx}}">
           <paper-button class="result-button" slot="buttons" on-tap="_createNewPerson">Create New Person</paper-button>
         </fs-add-person-result>
-        <h3>Possible Matches</h3>
-        <paper-dialog-scrollable id="results-scroll">
-          <template is="dom-repeat" items="{{_searchResults}}">
-            <fs-add-person-result gedcomx="{{item.content.gedcomx}}">
-              <paper-button class="result-button" slot="buttons" on-tap="_selectSearchResult">Add Person</paper-button>
-            </fs-add-person-result>
-          </template>
-        </paper-dialog-scrollable>
+        <div hidden="{{!_hasSearchResults()}}">
+          <h3>Possible Matches</h3>
+          <paper-dialog-scrollable id="results-scroll">
+            <template is="dom-repeat" items="{{_searchResults}}">
+              <fs-add-person-result gedcomx="{{item.content.gedcomx}}">
+                <paper-button class="result-button" slot="buttons" on-tap="_selectSearchResult">Add Person</paper-button>
+              </fs-add-person-result>
+            </template>
+          </paper-dialog-scrollable>
+        </div>
+        <div class="no-results-message" hidden="{{_hasSearchResults()}}">
+          <p class="label">No Matches Found</p>
+          <p>We could not find any possible matches. You can add this new person to the Family Tree.</p>
+        </div>
       </div>
       <div class="buttons">
         <paper-button on-tap="close">Cancel</paper-button>
@@ -361,8 +377,14 @@
         const response = e.detail.response;
         if(response.data && response.data) {
           this._searchResults = response.data.entries;
+        } else {
+          this._searchResults = [];
         }
         this._step = 'results';
+      }
+      
+      _hasSearchResults() {
+        return Array.isArray(this._searchResults) && this._searchResults.length > 0;
       }
       
       /**
