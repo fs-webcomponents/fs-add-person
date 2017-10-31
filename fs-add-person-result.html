@@ -62,13 +62,13 @@
     <div class="col vitals-col">
       <div class="vital" hidden="[[!_displayBirth(person)]]">
         <div class="label">Birth</div>
-        <div class="date">{{person.display.birthDate}}</div>
-        <div class="place" title="{{person.display.birthPlace}}">{{person.display.birthPlace}}</div>
+        <div class="date">{{_birthDateText(person)}}</div>
+        <div class="place" title="{{person.display.birthPlace}}">{{_birthPlaceText(person)}}</div>
       </div>
       <div class="vital">
         <div class="label" hidden="[[!_displayDeath(person)]]">Death</div>
-        <div class="date">{{person.display.deathDate}}</div>
-        <div class="place" title="{{person.display.birthPlace}}">{{person.display.deathPlace}}</div>
+        <div class="date">{{_deathDateText(person)}}</div>
+        <div class="place" title="{{person.display.birthPlace}}">{{_deathPlaceText(person)}}</div>
       </div>
     </div>
     <div class="col relatives-col">
@@ -169,12 +169,36 @@
         }
       }
       
+      _birthDateText(person) {
+        if(person && person.display) {
+          return person.display.birthDate;
+        }
+      }
+      
+      _birthPlaceText(person) {
+        if(person && person.display) {
+          return person.display.birthPlace;
+        }
+      }
+      
+      _deathDateText(person) {
+        if(person && person.display) {
+          return person.display.deathDate;
+        }
+      }
+      
+      _deathPlaceText(person) {
+        if(person && person.display) {
+          return person.display.deathPlace;
+        }
+      }
+      
       _displayBirth(person) {
-        return person.display && (person.display.birthDate || person.display.birthPlace);
+        return person && person.display && (person.display.birthDate || person.display.birthPlace);
       }
       
       _displayDeath(person) {
-        return person.display && (person.display.deathDate || person.display.deathPlace);
+        return person && person.display && (person.display.deathDate || person.display.deathPlace);
       }
       
       _displayPerson(person) {
