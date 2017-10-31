@@ -37,6 +37,41 @@
           <fs-add-person id="prefill" first-names="Joey" gender="http://gedcomx.org/Male" living="false"></fs-add-person>
         </template>
       </demo-snippet>
+      <h3>Add a spouse</h3>
+      <demo-snippet>
+        <template>
+          <paper-button raised onclick="spouse.open()">Open</paper-button>
+          <fs-add-person id="spouse" spouse-id="L5XY-1F3" gender="http://gedcomx.org/Female"></fs-add-person>
+        </template>
+      </demo-snippet>
+      <h3>Add a child</h3>
+      <demo-snippet>
+        <template>
+          <paper-button raised onclick="child.open()">Open</paper-button>
+          <fs-add-person id="child" father-id="L5XY-1F3" mother-id="L5XY-BBW"></fs-add-person>
+        </template>
+      </demo-snippet>
+      <h3>Add a parent in a new child and parents relationship</h3>
+      <demo-snippet>
+        <template>
+          <paper-button raised onclick="newRel.open()">Open</paper-button>
+          <fs-add-person id="newRel" child-id="L5XB-MSY"></fs-add-person>
+        </template>
+      </demo-snippet>
+      <h3>Add a parent to an existing child and parents relationship</h3>
+      <demo-snippet>
+        <template>
+          <paper-button raised onclick="updateRel.open()">Open</paper-button>
+          <fs-add-person id="updateRel" capr-id="MYKL-MK9"></fs-add-person>
+        </template>
+      </demo-snippet>
     </div>
+    <script>
+      document.body.addEventListener('person-added', function(e){
+        if(e.detail.personId) {
+          alert(`Added person ${e.detail.personId}`);
+        }
+      });
+    </script>
   </body>
 </html>

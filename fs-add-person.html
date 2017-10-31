@@ -149,8 +149,40 @@
 
   <script>
     /**
-     * `fs-add-person`
+     * `fs-add-person` is a component that can be used for adding new person to
+     * the tree and for creating relationships between existing persons. It's a
+     * modal dialog that starts by collecting basic information on a person
+     * (name, gender, birth, death) and then searches the tree for possible
+     * matches. From there the user can choose an existing person or create a
+     * new person with the data they entered. We don't ask for all possible
+     * data on a person; additional data can be added after the person is created.
      * 
+     * Relationships can be created so that the new person is attached to the
+     * tree or so that a new relationship is created between existing persons.
+     * 
+     * Set the `spouseId` property to create a couple relationship.
+     * 
+     *     <fs-add-person spouse-id="KWMX-123"></fs-add-person>
+     * 
+     * Set the `fatherId` or `motherId` property  (or both) to create a child 
+     * and parents relationship with the selected person as the child.
+     * 
+     *     <fs-add-person father-id="PPPP-PPP" mother-id="TRJK-NM9"></fs-add-person>
+     * 
+     * Set the `childId` property to create a child and parents relationship
+     * with the selected person as a parent.
+     * 
+     *     <fs-add-person child-id="STGH-123"></fs-add-person>
+     * 
+     * Set the `caprId` property to update an existing child and parents
+     * relationship with the selected person as a parent.
+     * 
+     *     <fs-add-person capr-id="MWFL-456"></fs-add-person>
+     * 
+     * If none of the above attributes are set then the new person is created
+     * but they will not be connected to the tree.
+     * 
+     * A `person-added` event is emitted when the process is complete.
      *
      * @customElement
      * @polymer
@@ -158,6 +190,15 @@
      */
     class FsAddPerson extends Polymer.Element {
       static get is() { return 'fs-add-person'; }
+      
+      /**
+       * Fired when the process of adding or selecting a person and creating
+       * any necessary relationships is complete.
+       *
+       * @event person-added
+       * @param {String} personId ID of the person that was created or selected.
+       */
+      
       static get properties() {
         return {
           opened: {
@@ -177,6 +218,32 @@
           birthPlace: Object,
           deathDate: Object,
           deathPlace: Object,
+          
+          /** 
+           * The ID of the existing spouse when wanting to add a spouse
+           */
+          spouseId: String,
+          
+          /**
+           * The ID of the existing father when wanting to add a child
+           */
+          fatherId: String,
+          
+          /** 
+           * The ID of the existing mother when wanting to add a child
+           */
+          motherId: String,
+          
+          /**
+           * The ID of the existing child when wanting to add a parent
+           */
+          childId: String,
+          
+          /**
+           * The ID of the existing child and parents relationship when adding
+           * a parent to an existing relationships
+           */
+          caprId: String,
           
           /** Whether the search request is loading */
           _loading: Boolean,
@@ -223,10 +290,12 @@
         this.$['results-scroll'].dialogElement = this.$.dialog;
       }
       
+      /** Open the dialog */
       open() {
         this.opened = true;
       }
       
+      /** Close the dialog */
       close() {
         this.opened = false;
       }
@@ -408,16 +477,16 @@
        * Create the new person
        */
       _createNewPerson() {
-        this.loading = true;
+        this._loading = true;
         const request = new FSRequest();
         request.url = '/platform/tree/persons';
         request.method = 'POST';
         request.body = this._newGedcomx;
         request.addEventListener('response', (e) => {
-          this.loading = false;
+          this._loading = false;
           const response = e.detail.response;
           if(response.statusCode === 201) {
-            this._selectPersonId(response.headers['x-entity-id']);
+            this._selectPerson(response.headers['x-entity-id'], this.gender);
           }
         });
         request.ready();
@@ -428,15 +497,138 @@
        * Select an existing person from a search result
        */
       _selectSearchResult(e) {
-        this._selectPersonId(e.model.item.content.gedcomx.persons[0].id);
+        const person = e.model.item.content.gedcomx.persons[0];
+        this._selectPerson(person.id, person.gender.type);
       }
       
       /**
        * Set the selected person ID and initiate the process of creating relationships
        */
-      _selectPersonId(personId) {
+      _selectPerson(personId, gender) {
         this._selectedId = personId;
-        console.log('selected', personId);
+        this._selectedGender = gender;
+        this._createRelationship();
+      }
+      
+      /**
+       * Emit the completed event
+       */
+      _completed() {
+        this.dispatchEvent(new CustomEvent('person-added', {
+          detail: {
+            personId: this._selectedId
+          },
+          bubbles: true, 
+          composed: true
+        }));
+        this.opened = false;
+      }
+      
+      /**
+       * Create or update the relationship that the new or selected person will
+       * belong to. Just one for now. The user can add other relationships later.
+       */
+      _createRelationship() {
+        if(this._selectedId) {
+          
+          const request = new FSRequest();
+          request.url = '/platform/tree/relationships';
+          request.method = 'POST';
+          request.addEventListener('response', (e) => {
+            this._loading = false;
+            // const response = e.detail.response;
+            this._completed();
+          });
+          
+          // Adding a spouse and thus creating a couple relationship.
+          // FamilySearch demands that person 1 be a male and person 2 be a
+          // female. We know the gender of the selected person and we just have
+          // to assume that the spouse is the opposite gender.
+          if(this.spouseId) {
+            request.body = {
+              relationships: [{
+                type: 'http://gedcomx.org/Couple',
+                person1: {
+                  resource: this._selectedGender === 'http://gedcomx.org/Male' ? this._selectedId : this.spouseId
+                },
+                person2: {
+                  resource: this._selectedGender === 'http://gedcomx.org/Female' ? this._selectedId : this.spouseId
+                }
+              }]
+            };
+          }
+          
+          // Adding a new child and thus creating a child-and-parents relationship
+          else if(this.fatherId || this.motherId) {
+            const relationship = {
+              child: {
+                resource: this._selectedId
+              }
+            };
+            if(this.fatherId) {
+              relationship.father = {
+                resource: this.fatherId
+              };
+            }
+            if(this.motherId) {
+              relationship.mother = {
+                resource: this.motherId
+              };
+            }
+            request.body = {
+              childAndParentsRelationships: [relationship]
+            };
+          }
+          
+          // Adding a new parent and thus creating a new child-and-parents relationship
+          else if(this.childId) {
+            const relationship = {
+              child: {
+                resource: this.childId
+              }
+            };
+            if(this._selectedGender === 'http://gedcomx.org/Male') {
+              relationship.father = {
+                resource: this._selectedId
+              };
+            } else {
+              relationship.mother = {
+                resource: this._selectedId
+              };
+            }
+            request.body = {
+              childAndParentsRelationships: [relationship]
+            };
+          }
+          
+          // Adding a new parent to an existing child-and-parents relationship
+          else if(this.caprId) {
+            request.url = `/platform/tree/child-and-parents-relationships/${this.caprId}`;
+            const relationship = {};
+            if(this._selectedGender === 'http://gedcomx.org/Male') {
+              relationship.father = {
+                resource: this._selectedId
+              };
+            } else {
+              relationship.mother = {
+                resource: this._selectedId
+              };
+            }
+            request.body = {
+              childAndParentsRelationships: [relationship]
+            };
+          }
+          
+          // Not configured to create any relationships so we're done
+          else {
+            this._completed();
+            return;
+          }
+          
+          this._loading = true;
+          request.ready();
+          request.generateRequest();
+        }
       }
     }
 
