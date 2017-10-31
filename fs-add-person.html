@@ -132,7 +132,7 @@
         <fs-add-person-result gedcomx="{{_newGedcomx}}">
           <paper-button class="result-button" slot="buttons" on-tap="_createNewPerson">Create New Person</paper-button>
         </fs-add-person-result>
-        <div hidden="{{!_hasSearchResults()}}">
+        <div hidden="{{!_hasSearchResults(_searchResults)}}">
           <h3>Possible Matches</h3>
           <paper-dialog-scrollable id="results-scroll">
             <template is="dom-repeat" items="{{_searchResults}}">
@@ -142,7 +142,7 @@
             </template>
           </paper-dialog-scrollable>
         </div>
-        <div class="no-results-message" hidden="{{_hasSearchResults()}}">
+        <div class="no-results-message" hidden="{{_hasSearchResults(_searchResults)}}">
           <p class="label">No Matches Found</p>
           <p>We could not find any possible matches. You can add this new person to the Family Tree.</p>
         </div>
@@ -366,7 +366,7 @@
           queryParts.deathPlace = this.deathPlace.original;
         }
         const query = Object.keys(queryParts)
-          .map((key) => `${key}:"${queryParts[key]}"`)
+          .map((key) => `${key}:"${queryParts[key]}"~`)
           .join(' ');
         const match = this.firstNames && this.lastNames && this.gender && this.living !== undefined
           && this.birthDate && this.deathDate && this.deathPlace;
