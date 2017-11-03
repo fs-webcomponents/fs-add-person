@@ -618,7 +618,7 @@
           }
           
           // Adding a new child and thus creating a child-and-parents relationship
-          else if(this.fatherId || this.motherId) {
+          if((this.fatherId || this.motherId) && !this.caprIds) {
             const relationship = {
               child: {
                 resource: this._selectedId
@@ -640,7 +640,7 @@
           }
           
           // Adding a new parent and thus creating a new child-and-parents relationship
-          else if(this.childId) {
+          if(this.childId) {
             const relationship = {
               child: {
                 resource: this.childId
@@ -660,43 +660,60 @@
             }));
           }
           
-          // Adding a new parent to an existing child-and-parents relationship
-          else if(Array.isArray(this.caprIds)) {
-            const relationship = {};
+          // Adding a new parent to an existing family. We update all specifed
+          // child-and-parents relationships and create a couple relationship.
+          if(Array.isArray(this.caprIds)) {
+            const caprUpdate = {};
             if(this._selectedGender === 'http://gedcomx.org/Male') {
-              relationship.father = {
+              caprUpdate.father = {
                 resource: this._selectedId
               };
             } else {
-              relationship.mother = {
+              caprUpdate.mother = {
                 resource: this._selectedId
               };
             }
             const body = {
-              childAndParentsRelationships: [relationship]
+              childAndParentsRelationships: [caprUpdate]
             };
             this.caprIds.forEach((caprId) => {
               requests.push(this._createRelationshipRequest(body, `/platform/tree/child-and-parents-relationships/${caprId}`));
             });
+            
+            // Can we create a couple relationship?
+            const couple = {
+              type: 'http://gedcomx.org/Couple'
+            };
+            if(this._selectedGender === 'http://gedcomx.org/Female' && this.fatherId) {
+              couple.person1 = {
+                resource: this.fatherId
+              };
+              couple.person2 = {
+                resource: this._selectedId
+              };
+            }
+            else if(this._selectedGender === 'http://gedcomx.org/Male' && this.motherId) {
+              couple.person1 = {
+                resource: this._selectedId
+              };
+              couple.person2 = {
+                resource: this.motherId
+              };
+            }
+            if(couple.person1 && couple.person2) {
+              requests.push(this._createRelationshipRequest({
+                relationships: [couple]
+              }));
+            }
           }
           
-          // Not configured to create any relationships so we're done
-          else {
-            this._completed();
-            return;
-          }
-          
-          // Issue all requests and wait for all responses
+          // Process all requests. We must do it serially. If we attempt to
+          // process them in parallel then we'll likely trigger a 409 conflict
+          // error from the server by asking it to update the same person
+          // simultaneously (because person records are touched when relationships
+          // are modified).
           this._loading = true;
-          const promises = requests.map((request) => {
-            return new Promise((resolve, reject) => {
-              request.addEventListener('response', (e) => {
-                resolve(e);
-              });
-              request.generateRequest();
-            });
-          });
-          Promise.all(promises).then(() => {
+          this._serialRequests(requests).then(() => {
             this._loading = false;
             this._completed();
           }, (err) => {
@@ -714,6 +731,27 @@
         request.body = body;
         request.ready();
         return request;
+      }
+      
+      /**
+       * Execute requests in series.
+       * Inspired by https://gist.github.com/joelnet/b286721a933e7e410120a8a2866dbcc8
+       * 
+       * @return {Promise}
+       */
+      _serialRequests(requests) {
+        return requests.reduce((promise, request) => {
+          return promise.then(result => {
+            // We defer creation of the promise until as late as possible
+            // because promises immediately begin to execute.
+            return new Promise((resolve, reject) => {
+              request.addEventListener('response', (e) => {
+                resolve(e);
+              });
+              request.generateRequest();
+            }).then(Array.prototype.concat.bind(result));
+          });
+        }, Promise.resolve([]));
       }
     }
 
