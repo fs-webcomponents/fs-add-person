@@ -112,7 +112,7 @@
           </div>
           <div>
             <div>Living</div>
-            <paper-radio-group on-iron-select="_livingSelection">
+            <paper-radio-group selected="{{_calculateLivingSelection(living)}}" on-iron-select="_livingSelection">
               <paper-radio-button name="living">Living</paper-radio-button>
               <paper-radio-button name="deceased">Deceased</paper-radio-button>
             </paper-radio-group>
@@ -217,6 +217,8 @@
       
       static get properties() {
         return {
+          
+          /** Whether the dialog is opened **/
           opened: {
             type: Boolean,
             value: false
@@ -316,6 +318,27 @@
         this.opened = false;
       }
       
+      /** Reset the element, removing any input values and relationship IDs **/
+      reset() {
+        this.opened = false;
+        this.firstNames = undefined;
+        this.lastNames = undefined;
+        this.gender = undefined;
+        this.living = undefined;
+        this.birthDate = undefined;
+        this.birthPlace = undefined;
+        this.deathDate = undefined;
+        this.deathPlace = undefined;
+        this.spouseId = undefined;
+        this.fatherId = undefined;
+        this.motherId = undefined;
+        this.childId = undefined;
+        this.caprIds = undefined;
+        this._step = 'data';
+        this._loading = false;
+        this._searchResults = [];
+      }
+      
       /**
        * Issue the API request for finding possible duplicates
        */
@@ -385,6 +408,15 @@
       
       _hasSearchResults() {
         return Array.isArray(this._searchResults) && this._searchResults.length > 0;
+      }
+      
+      _calculateLivingSelection(living) {
+        if(living === true) {
+          return 'living';
+        }
+        if(living === false) {
+          return 'deceased';
+        }
       }
       
       /**
@@ -543,7 +575,7 @@
           bubbles: true, 
           composed: true
         }));
-        this.opened = false;
+        this.reset();
       }
       
       /**
