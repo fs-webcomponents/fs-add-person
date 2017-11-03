@@ -195,6 +195,12 @@
      * 
      *     <fs-add-person capr-ids="MWFL-456,MWTT-8XZ"></fs-add-person>
      * 
+     * When using `caprIds` you may also provide a `father-id` or `mother-id`
+     * to signify that you want to create a couple relationship between that
+     * person and the selected person.
+     * 
+     *     <fs-add-person capr-ids="MWFL-456,MWTT-8XZ" father-id="PFMT-Y4G"></fs-add-person>
+     * 
      * If none of the above attributes are set then the new person is created
      * but they will not be connected to the tree.
      * 
