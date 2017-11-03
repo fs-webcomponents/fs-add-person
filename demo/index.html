@@ -62,14 +62,14 @@
       <demo-snippet>
         <template>
           <paper-button raised onclick="updateRel.open()">Open</paper-button>
-          <fs-add-person id="updateRel" capr-id="MYKL-74G"></fs-add-person>
+          <fs-add-person id="updateRel" capr-ids='["MYKL-74G"]'></fs-add-person>
         </template>
       </demo-snippet>
     </div>
     <script>
       document.body.addEventListener('person-added', function(e){
         if(e.detail.personId) {
-          alert(`Added person ${e.detail.personId}`);
+          console.log(`Added person ${e.detail.personId}`);
         }
       });
     </script>

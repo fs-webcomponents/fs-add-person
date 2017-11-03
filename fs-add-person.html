@@ -190,10 +190,10 @@
      * 
      *     <fs-add-person child-id="STGH-123"></fs-add-person>
      * 
-     * Set the `caprId` property to update an existing child and parents
-     * relationship with the selected person as a parent.
+     * Set the `caprIds` property to update existing child and parents
+     * relationships with the selected person as a parent.
      * 
-     *     <fs-add-person capr-id="MWFL-456"></fs-add-person>
+     *     <fs-add-person capr-ids="MWFL-456,MWTT-8XZ"></fs-add-person>
      * 
      * If none of the above attributes are set then the new person is created
      * but they will not be connected to the tree.
@@ -256,10 +256,10 @@
           childId: String,
           
           /**
-           * The ID of the existing child and parents relationship when adding
-           * a parent to an existing relationships
+           * List of existing child-and-parents relationship IDs, used when 
+           * adding a parent to an existing family
            */
-          caprId: String,
+          caprIds: Array,
           
           /** Whether the search request is loading */
           _loading: Boolean,
@@ -547,27 +547,32 @@
       }
       
       /**
-       * Create or update the relationship that the new or selected person will
-       * belong to. Just one for now. The user can add other relationships later.
+       * Create or update the relationships that the new or selected person will
+       * belong to. 
+       * 
+       * Most cases involve updating or creating just one relationship. However
+       * when adding a parent to an existing family we support updating all
+       * child-and-parents relationships in that family.
        */
       _createRelationship() {
         if(this._selectedId) {
           
-          const request = new FSRequest();
-          request.url = '/platform/tree/relationships';
-          request.method = 'POST';
-          request.addEventListener('response', (e) => {
-            this._loading = false;
-            // const response = e.detail.response;
-            this._completed();
-          });
+          // Right now this method is designed to handle only one request. But
+          // we just decided to handle multiple requests for adding a parent to
+          // and existing family. So we will create an array of requests, push
+          // requests onto the queue, fire all requests and wait for them to
+          // all complete.
+          //
+          // TODO: how will we do error handling?
+          
+          const requests = [];
           
           // Adding a spouse and thus creating a couple relationship.
           // FamilySearch demands that person 1 be a male and person 2 be a
           // female. We know the gender of the selected person and we just have
           // to assume that the spouse is the opposite gender.
           if(this.spouseId) {
-            request.body = {
+            requests.push(this._createRelationshipRequest({
               relationships: [{
                 type: 'http://gedcomx.org/Couple',
                 person1: {
@@ -577,7 +582,7 @@
                   resource: this._selectedGender === 'http://gedcomx.org/Female' ? this._selectedId : this.spouseId
                 }
               }]
-            };
+            }));
           }
           
           // Adding a new child and thus creating a child-and-parents relationship
@@ -597,9 +602,9 @@
                 resource: this.motherId
               };
             }
-            request.body = {
+            requests.push(this._createRelationshipRequest({
               childAndParentsRelationships: [relationship]
-            };
+            }));
           }
           
           // Adding a new parent and thus creating a new child-and-parents relationship
@@ -618,14 +623,13 @@
                 resource: this._selectedId
               };
             }
-            request.body = {
+            requests.push(this._createRelationshipRequest({
               childAndParentsRelationships: [relationship]
-            };
+            }));
           }
           
           // Adding a new parent to an existing child-and-parents relationship
-          else if(this.caprId) {
-            request.url = `/platform/tree/child-and-parents-relationships/${this.caprId}`;
+          else if(Array.isArray(this.caprIds)) {
             const relationship = {};
             if(this._selectedGender === 'http://gedcomx.org/Male') {
               relationship.father = {
@@ -636,9 +640,12 @@
                 resource: this._selectedId
               };
             }
-            request.body = {
+            const body = {
               childAndParentsRelationships: [relationship]
             };
+            this.caprIds.forEach((caprId) => {
+              requests.push(this._createRelationshipRequest(body, `/platform/tree/child-and-parents-relationships/${caprId}`));
+            });
           }
           
           // Not configured to create any relationships so we're done
@@ -647,10 +654,34 @@
             return;
           }
           
+          // Issue all requests and wait for all responses
           this._loading = true;
-          request.ready();
-          request.generateRequest();
+          const promises = requests.map((request) => {
+            return new Promise((resolve, reject) => {
+              request.addEventListener('response', (e) => {
+                resolve(e);
+              });
+              request.generateRequest();
+            });
+          });
+          Promise.all(promises).then(() => {
+            this._loading = false;
+            this._completed();
+          }, (err) => {
+            console.error(err);
+            this._loading = false;
+            this._completed();
+          });
         }
+      }
+      
+      _createRelationshipRequest(body, url = '/platform/tree/relationships') {
+        const request = new FSRequest();
+        request.url = url;
+        request.method = 'POST';
+        request.body = body;
+        request.ready();
+        return request;
       }
     }
 
