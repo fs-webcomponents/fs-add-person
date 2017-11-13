@@ -610,106 +610,28 @@
           // female. We know the gender of the selected person and we just have
           // to assume that the spouse is the opposite gender.
           if(this.spouseId) {
-            requests.push(this._createRelationshipRequest({
-              relationships: [{
-                type: 'http://gedcomx.org/Couple',
-                person1: {
-                  resource: this._selectedGender === 'http://gedcomx.org/Male' ? this._selectedId : this.spouseId
-                },
-                person2: {
-                  resource: this._selectedGender === 'http://gedcomx.org/Female' ? this._selectedId : this.spouseId
-                }
-              }]
-            }));
+            requests.push(this._createCoupleRelationshipWhenAddingSpouse());
           }
           
           // Adding a new child and thus creating a child-and-parents relationship
           if((this.fatherId || this.motherId) && !this.caprIds) {
-            const relationship = {
-              child: {
-                resource: this._selectedId
-              }
-            };
-            if(this.fatherId) {
-              relationship.father = {
-                resource: this.fatherId
-              };
-            }
-            if(this.motherId) {
-              relationship.mother = {
-                resource: this.motherId
-              };
-            }
-            requests.push(this._createRelationshipRequest({
-              childAndParentsRelationships: [relationship]
-            }));
+            requests.push(this._createCaprWhenAddingChild());
           }
           
           // Adding a new parent and thus creating a new child-and-parents relationship
           if(this.childId) {
-            const relationship = {
-              child: {
-                resource: this.childId
-              }
-            };
-            if(this._selectedGender === 'http://gedcomx.org/Male') {
-              relationship.father = {
-                resource: this._selectedId
-              };
-            } else {
-              relationship.mother = {
-                resource: this._selectedId
-              };
-            }
-            requests.push(this._createRelationshipRequest({
-              childAndParentsRelationships: [relationship]
-            }));
+            requests.push(this._createCaprWhenAddingParent());
           }
           
           // Adding a new parent to an existing family. We update all specifed
           // child-and-parents relationships and create a couple relationship.
           if(Array.isArray(this.caprIds)) {
-            const caprUpdate = {};
-            if(this._selectedGender === 'http://gedcomx.org/Male') {
-              caprUpdate.father = {
-                resource: this._selectedId
-              };
-            } else {
-              caprUpdate.mother = {
-                resource: this._selectedId
-              };
-            }
-            const body = {
-              childAndParentsRelationships: [caprUpdate]
-            };
-            this.caprIds.forEach((caprId) => {
-              requests.push(this._createRelationshipRequest(body, `/platform/tree/child-and-parents-relationships/${caprId}`));
-            });
+            requests.push(...this._updateCaprsWhenAddingParent());
             
             // Can we create a couple relationship?
-            const couple = {
-              type: 'http://gedcomx.org/Couple'
-            };
-            if(this._selectedGender === 'http://gedcomx.org/Female' && this.fatherId) {
-              couple.person1 = {
-                resource: this.fatherId
-              };
-              couple.person2 = {
-                resource: this._selectedId
-              };
-            }
-            else if(this._selectedGender === 'http://gedcomx.org/Male' && this.motherId) {
-              couple.person1 = {
-                resource: this._selectedId
-              };
-              couple.person2 = {
-                resource: this.motherId
-              };
-            }
-            if(couple.person1 && couple.person2) {
-              requests.push(this._createRelationshipRequest({
-                relationships: [couple]
-              }));
+            const coupleRequest = this._createCoupleWhenAddingParent();
+            if(coupleRequest) {
+              requests.push(coupleRequest);
             }
           }
           
@@ -730,6 +652,139 @@
         }
       }
       
+      /**
+       * Create a request for creating a couple relationship.
+       * 
+       * @return {FSRequest}
+       */
+      _createCoupleRelationshipWhenAddingSpouse() {
+        return this._createRelationshipRequest({
+          relationships: [{
+            type: 'http://gedcomx.org/Couple',
+            person1: {
+              resource: this._selectedGender === 'http://gedcomx.org/Male' ? this._selectedId : this.spouseId
+            },
+            person2: {
+              resource: this._selectedGender === 'http://gedcomx.org/Female' ? this._selectedId : this.spouseId
+            }
+          }]
+        });
+      }
+      
+      /**
+       * Create a child and parents relationship when adding a new child.
+       * 
+       * @return {FSRequest}
+       */
+      _createCaprWhenAddingChild() {
+        const relationship = {
+          child: {
+            resource: this._selectedId
+          }
+        };
+        if(this.fatherId) {
+          relationship.father = {
+            resource: this.fatherId
+          };
+        }
+        if(this.motherId) {
+          relationship.mother = {
+            resource: this.motherId
+          };
+        }
+        return this._createRelationshipRequest({
+          childAndParentsRelationships: [relationship]
+        });
+      }
+      
+      /**
+       * Create a child and parents relationships when adding a parent.
+       * 
+       * @return {FSRequest}
+       */
+      _createCaprWhenAddingParent() {
+        const relationship = {
+          child: {
+            resource: this.childId
+          }
+        };
+        if(this._selectedGender === 'http://gedcomx.org/Male') {
+          relationship.father = {
+            resource: this._selectedId
+          };
+        } else {
+          relationship.mother = {
+            resource: this._selectedId
+          };
+        }
+        return this._createRelationshipRequest({
+          childAndParentsRelationships: [relationship]
+        });
+      }
+      
+      /**
+       * Update child and parents relationships when adding a parent to a family.
+       * 
+       * @return {FSRequest[]}
+       */
+      _updateCaprsWhenAddingParent() {
+        const caprUpdate = {};
+        if(this._selectedGender === 'http://gedcomx.org/Male') {
+          caprUpdate.father = {
+            resource: this._selectedId
+          };
+        } else {
+          caprUpdate.mother = {
+            resource: this._selectedId
+          };
+        }
+        const body = {
+          childAndParentsRelationships: [caprUpdate]
+        };
+        return this.caprIds.map((caprId) => {
+          return this._createRelationshipRequest(body, `/platform/tree/child-and-parents-relationships/${caprId}`);
+        });
+      }
+      
+      /**
+       * Create a couple relationship when adding a parent to a family.
+       * 
+       * @return {FSRequest[]}
+       */
+      _createCoupleWhenAddingParent() {
+        const couple = {
+          type: 'http://gedcomx.org/Couple'
+        };
+        if(this._selectedGender === 'http://gedcomx.org/Female' && this.fatherId) {
+          couple.person1 = {
+            resource: this.fatherId
+          };
+          couple.person2 = {
+            resource: this._selectedId
+          };
+        }
+        else if(this._selectedGender === 'http://gedcomx.org/Male' && this.motherId) {
+          couple.person1 = {
+            resource: this._selectedId
+          };
+          couple.person2 = {
+            resource: this.motherId
+          };
+        }
+        if(couple.person1 && couple.person2) {
+          return this._createRelationshipRequest({
+            relationships: [couple]
+          });
+        }
+      }
+      
+      /**
+       * Construct a request for creating a relationship.
+       * 
+       * @param {Object} body
+       * @param {String=} url
+       * @return {FSRequest}
+       */
       _createRelationshipRequest(body, url = '/platform/tree/relationships') {
         const request = new FSRequest();
         request.url = url;
