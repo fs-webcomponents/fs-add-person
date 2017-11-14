@@ -165,7 +165,7 @@
 
   <script>
     /**
-     * `fs-add-person` is a component that can be used for adding new person to
+     * `fs-add-person` is a component that can be used for adding new persons to
      * the tree and for creating relationships between existing persons. It's a
      * modal dialog that starts by collecting basic information on a person
      * (name, gender, birth, death) and then searches the tree for possible
@@ -176,35 +176,49 @@
      * Relationships can be created so that the new person is attached to the
      * tree or so that a new relationship is created between existing persons.
      * 
-     * Set the `spouseId` property to create a couple relationship.
+     * A `person-added` event is emitted when the process is complete. The detail
+     * property of the event object will have a `personId` property that specifies
+     * ID of new or selected person.
+     * 
+     * ### Add An Unconnected Person
+     * 
+     *     <fs-add-person></fs-add-person>
+     * 
+     * ### Add A Spouse
+     * 
+     * Set the `spouseId` property to create a couple relationship between the
+     * new person and the person specified by `spouseId`.
      * 
      *     <fs-add-person spouse-id="KWMX-123"></fs-add-person>
      * 
-     * Set the `fatherId` or `motherId` property  (or both) to create a child 
+     * ### Add A Child
+     * 
+     * Set the `fatherId` or `motherId` property (or both) to create a child 
      * and parents relationship with the selected person as the child.
      * 
      *     <fs-add-person father-id="PPPP-PPP" mother-id="TRJK-NM9"></fs-add-person>
+     * 
+     * ### Add A Parent - New CAPR
      * 
      * Set the `childId` property to create a child and parents relationship
      * with the selected person as a parent.
      * 
      *     <fs-add-person child-id="STGH-123"></fs-add-person>
      * 
+     * ### Add A Parent - Update CAPRs
+     * 
      * Set the `caprIds` property to update existing child and parents
      * relationships with the selected person as a parent.
      * 
      *     <fs-add-person capr-ids="MWFL-456,MWTT-8XZ"></fs-add-person>
+     * 
+     * ### Add A Parent - Update CAPRs And Create A Couple
      * 
      * When using `caprIds` you may also provide a `father-id` or `mother-id`
      * to signify that you want to create a couple relationship between that
      * person and the selected person.
      * 
      *     <fs-add-person capr-ids="MWFL-456,MWTT-8XZ" father-id="PFMT-Y4G"></fs-add-person>
-     * 
-     * If none of the above attributes are set then the new person is created
-     * but they will not be connected to the tree.
-     * 
-     * A `person-added` event is emitted when the process is complete.
      *
      * @customElement
      * @polymer
