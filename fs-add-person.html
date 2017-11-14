@@ -214,12 +214,21 @@
      * 
      * ### Add A Parent - Update CAPRs And Create A Couple
      * 
-     * When using `caprIds` you may also provide a `father-id` or `mother-id`
+     * When using `caprIds` you may also provide a `fatherId` or `motherId`
      * to signify that you want to create a couple relationship between that
      * person and the selected person.
      * 
      *     <fs-add-person capr-ids="MWFL-456,MWTT-8XZ" father-id="PFMT-Y4G"></fs-add-person>
      *
+     * ### Add A Parent - Update CAPRs Without A CAPR ID
+     * 
+     * If you have a `childId` and a `motherId` or `fatherId` but not a `caprId`
+     * then you may provide those and the element will calculate the matching
+     * `caprId`. A couple relationship will be created between the `motherId`
+     * and `fatherId` if both are specified.
+     * 
+     *     <fs-add-person child-id="STGH-123" father-id="PPPP-PPP" mother-id="TRJK-NM9">
+     * 
      * @customElement
      * @polymer
      * @demo demo/index.html
@@ -581,7 +590,7 @@
       _selectPerson(personId, gender) {
         this._selectedId = personId;
         this._selectedGender = gender;
-        this._createRelationship();
+        this._createRelationships();
       }
       
       /**
@@ -606,13 +615,17 @@
        * when adding a parent to an existing family we support updating all
        * child-and-parents relationships in that family.
        */
-      _createRelationship() {
+      async _createRelationships() {
         if(this._selectedId) {
           
           // Process the different use cases, create requests required to
           // create or update the necessary relationships, then process the requests.
           
+          this._loading = true;
           let requests = [];
+          
+          // First we check if we need to calculate the caprId.
+          await this._calculateCaprIdWhenAddingParent();
           
           // These methods will only return a request if the requirements for
           // their use case have been met. We have chosen to blindly push the 
@@ -637,7 +650,6 @@
           // error from the server by asking it to update the same person
           // simultaneously (because person records are touched when relationships
           // are modified).
-          this._loading = true;
           this._serialRequests(requests).then(() => {
             this._loading = false;
             this._completed();
@@ -796,8 +808,80 @@
         request.url = url;
         request.method = 'POST';
         request.body = body;
-        request.ready();
         return request;
+      }
+      
+      /**
+       * Calculate the caprId when given a childId and a fatherId and/or motherId.
+       * If we have a caprId then we clear the childId property and set the
+       * caprId property so that we can continue on with the add new parent and
+       * update caprs use case.
+       * 
+       * @return {Promise} resolves when the process is finished
+       */
+      async _calculateCaprIdWhenAddingParent() {
+        if(this.childId && (this.motherId || this.fatherId)) {
+          return this._findCaprIds(this.childId, this.fatherId, this.motherId)
+            .then((caprIds) => {
+              this.childId = undefined;
+              this.caprIds = caprIds;
+            });
+        }
+      }
+      
+      /**
+       * Get a list of caprIds that match the given childId, fatherId, and motherId.
+       * 
+       * @param {String} childId
+       * @param {String} fatherId
+       * @param {String} motherId
+       * @return {Promise} resolves to a list of caprIds
+       */
+      _findCaprIds(childId, fatherId, motherId) {
+        return new Promise((resolve, reject) => {
+          const request = new FSRequest();
+          request.url = `/platform/tree/persons/${childId}/parents`;
+          request.addEventListener('response', (e) => {
+            const response = e.detail.response;
+            const caprIds = [];
+            if(response.data && response.data.childAndParentsRelationships) {
+              response.data.childAndParentsRelationships.forEach((rel) => {
+                if(this._caprMatches(rel, childId, fatherId, motherId)) {
+                  caprIds.push(rel.id);
+                }
+              });
+            }
+            resolve(caprIds);
+          });
+          request.generateRequest();
+        });
+      }
+      
+      /**
+       * Check whether a child-and-parents relationship matches the given
+       * childId, fatherId, and motherId
+       * 
+       * @return {Boolean}
+       */
+      _caprMatches(rel, childId, fatherId, motherId) {
+        return rel.child.resourceId === childId 
+           && // Father matches in both or doesn't exist in both
+          (
+            // Father exists and matches in both
+            (fatherId && rel.father && rel.father.resourceId === fatherId)
+            
+            // Or father doesn't exist in both
+            || (!fatherId && !rel.father)
+          )
+          
+          && // Mother matches in both or doesn't exist in both
+          (
+            // Mother exists and matches in both
+            (motherId && rel.mother && rel.mother.resourceId === motherId)
+            
+            // Or mother doesn't exist in both
+            || (!motherId && !rel.mother)
+          );
       }
       
       /**
