@@ -609,45 +609,28 @@
       _createRelationship() {
         if(this._selectedId) {
           
-          // Right now this method is designed to handle only one request. But
-          // we just decided to handle multiple requests for adding a parent to
-          // and existing family. So we will create an array of requests, push
-          // requests onto the queue, fire all requests and wait for them to
-          // all complete.
-          //
-          // TODO: how will we do error handling?
+          // Process the different use cases, create requests required to
+          // create or update the necessary relationships, then process the requests.
           
-          const requests = [];
+          let requests = [];
           
-          // Adding a spouse and thus creating a couple relationship.
-          // FamilySearch demands that person 1 be a male and person 2 be a
-          // female. We know the gender of the selected person and we just have
-          // to assume that the spouse is the opposite gender.
-          if(this.spouseId) {
-            requests.push(this._createCoupleRelationshipWhenAddingSpouse());
-          }
-          
-          // Adding a new child and thus creating a child-and-parents relationship
-          if((this.fatherId || this.motherId) && !this.caprIds) {
-            requests.push(this._createCaprWhenAddingChild());
-          }
-          
-          // Adding a new parent and thus creating a new child-and-parents relationship
-          if(this.childId) {
-            requests.push(this._createCaprWhenAddingParent());
-          }
+          // These methods will only return a request if the requirements for
+          // their use case have been met. We have chosen to blindly push the 
+          // return value onto the and just filter out undefines values later.
+          // That is less logic than checking the return value of each method.
+          requests.push(this._createCoupleRelationshipWhenAddingSpouse());
+          requests.push(this._createCaprWhenAddingChild());
+          requests.push(this._createCaprWhenAddingParent());
           
           // Adding a new parent to an existing family. We update all specifed
-          // child-and-parents relationships and create a couple relationship.
+          // child-and-parents relationships and optionally create a couple relationship.
           if(Array.isArray(this.caprIds)) {
             requests.push(...this._updateCaprsWhenAddingParent());
-            
-            // Can we create a couple relationship?
-            const coupleRequest = this._createCoupleWhenAddingParent();
-            if(coupleRequest) {
-              requests.push(coupleRequest);
-            }
+            requests.push(this._createCoupleWhenAddingParent());
           }
+          
+          // Remove undefined entries in the requests list.
+          requests = requests.filter(r => !!r);
           
           // Process all requests. We must do it serially. If we attempt to
           // process them in parallel then we'll likely trigger a 409 conflict
@@ -672,17 +655,22 @@
        * @return {FSRequest}
        */
       _createCoupleRelationshipWhenAddingSpouse() {
-        return this._createRelationshipRequest({
-          relationships: [{
-            type: 'http://gedcomx.org/Couple',
-            person1: {
-              resource: this._selectedGender === 'http://gedcomx.org/Male' ? this._selectedId : this.spouseId
-            },
-            person2: {
-              resource: this._selectedGender === 'http://gedcomx.org/Female' ? this._selectedId : this.spouseId
-            }
-          }]
-        });
+        if(this.spouseId) {
+          // FamilySearch demands that person 1 be a male and person 2 be a
+          // female. We know the gender of the selected person and we just have
+          // to assume that the spouse is the opposite gender.
+          return this._createRelationshipRequest({
+            relationships: [{
+              type: 'http://gedcomx.org/Couple',
+              person1: {
+                resource: this._selectedGender === 'http://gedcomx.org/Male' ? this._selectedId : this.spouseId
+              },
+              person2: {
+                resource: this._selectedGender === 'http://gedcomx.org/Female' ? this._selectedId : this.spouseId
+              }
+            }]
+          });
+        }
       }
       
       /**
@@ -691,24 +679,26 @@
        * @return {FSRequest}
        */
       _createCaprWhenAddingChild() {
-        const relationship = {
-          child: {
-            resource: this._selectedId
+        if((this.fatherId || this.motherId) && !this.caprIds && !this.childId) {
+          const relationship = {
+            child: {
+              resource: this._selectedId
+            }
+          };
+          if(this.fatherId) {
+            relationship.father = {
+              resource: this.fatherId
+            };
           }
-        };
-        if(this.fatherId) {
-          relationship.father = {
-            resource: this.fatherId
-          };
+          if(this.motherId) {
+            relationship.mother = {
+              resource: this.motherId
+            };
+          }
+          return this._createRelationshipRequest({
+            childAndParentsRelationships: [relationship]
+          });
         }
-        if(this.motherId) {
-          relationship.mother = {
-            resource: this.motherId
-          };
-        }
-        return this._createRelationshipRequest({
-          childAndParentsRelationships: [relationship]
-        });
       }
       
       /**
@@ -717,23 +707,25 @@
        * @return {FSRequest}
        */
       _createCaprWhenAddingParent() {
-        const relationship = {
-          child: {
-            resource: this.childId
+        if(this.childId && !(this.motherId || this.fatherId)) {
+          const relationship = {
+            child: {
+              resource: this.childId
+            }
+          };
+          if(this._selectedGender === 'http://gedcomx.org/Male') {
+            relationship.father = {
+              resource: this._selectedId
+            };
+          } else {
+            relationship.mother = {
+              resource: this._selectedId
+            };
           }
-        };
-        if(this._selectedGender === 'http://gedcomx.org/Male') {
-          relationship.father = {
-            resource: this._selectedId
-          };
-        } else {
-          relationship.mother = {
-            resource: this._selectedId
-          };
+          return this._createRelationshipRequest({
+            childAndParentsRelationships: [relationship]
+          });
         }
-        return this._createRelationshipRequest({
-          childAndParentsRelationships: [relationship]
-        });
       }
       
       /**
