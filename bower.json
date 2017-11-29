@@ -1,6 +1,6 @@
 {
   "name": "fs-add-person",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "main": "fs-add-person.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
