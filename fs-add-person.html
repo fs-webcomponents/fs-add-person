@@ -809,7 +809,7 @@
        * @return {FSRequest}
        */
       _createRelationshipRequest(body, url = '/platform/tree/relationships') {
-        const request = new FSRequest();
+        const request = document.createElement('fs-request');
         request.url = url;
         request.method = 'POST';
         request.body = body;
@@ -844,7 +844,7 @@
        */
       _findCaprIds(childId, fatherId, motherId) {
         return new Promise((resolve, reject) => {
-          const request = new FSRequest();
+          const request = document.createElement('fs-request');
           request.url = `/platform/tree/persons/${childId}/parents`;
           request.addEventListener('response', (e) => {
             const response = e.detail.response;
