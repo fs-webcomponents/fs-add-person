@@ -12,7 +12,7 @@
     "paper-radio-group": "PolymerElements/paper-radio-group#^2.0.0",
     "paper-radio-button": "PolymerElements/paper-radio-button#^2.0.0",
     "fs-person-gender": "fs-webcomponents/fs-person-gender#^4.1.0",
-    "fs-request": "fs-webcomponents/fs-request#^4.2.0",
+    "fs-request": "fs-webcomponents/fs-request#^4.2.3",
     "paper-spinner": "PolymerElements/paper-spinner#^2.0.0",
     "paper-dialog-scrollable": "PolymerElements/paper-dialog-scrollable#^2.1.0"
   },
