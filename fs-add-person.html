@@ -813,6 +813,7 @@
         request.url = url;
         request.method = 'POST';
         request.body = body;
+        this._delegateRequestEvents(request);
         return request;
       }
       
@@ -846,6 +847,7 @@
         return new Promise((resolve, reject) => {
           const request = document.createElement('fs-request');
           request.url = `/platform/tree/persons/${childId}/parents`;
+          this._delegateRequestEvents(request);
           request.addEventListener('response', (e) => {
             const response = e.detail.response;
             const caprIds = [];
@@ -859,6 +861,17 @@
             resolve(caprIds);
           });
           request.generateRequest();
+        });
+      }
+      
+      /**
+       * Attach requests to the DOM before sending so that events propagate and
+       * then remove the elements when the requests are completed.
+       */
+      _delegateRequestEvents(request) {
+        this.appendChild(request);
+        request.addEventListener('completed-changed', () => {
+          request.remove();
         });
       }
       
