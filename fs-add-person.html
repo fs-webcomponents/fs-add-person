@@ -157,10 +157,16 @@
       </div>
     </paper-dialog>
     <fs-request 
-      id="request"
+      id="searchRequest"
       loading="{{_loading}}"
       headers='{"Accept":"application/x-gedcomx-atom+json"}'
       on-response="_handleSearchResponse"></fs-request>
+    <fs-request
+      id="createPersonRequest"
+      loading="{{_loading}}"
+      method="POST"
+      url="/platform/tree/persons"
+      on-response="_handleCreatePersonResponse"></fs-request>
   </template>
 
   <script>
@@ -372,8 +378,8 @@
        * Issue the API request for finding possible duplicates
        */
       _search() {
-        this.$.request.url = this._calculateSearchUrl();
-        this.$.request.generateRequest();
+        this.$.searchRequest.url = this._calculateSearchUrl();
+        this.$.searchRequest.generateRequest();
         this._newGedcomx = this._calculateNewGedcomx();
       }
       
@@ -560,20 +566,19 @@
        * Create the new person
        */
       _createNewPerson() {
-        this._loading = true;
-        const request = new FSRequest();
-        request.url = '/platform/tree/persons';
-        request.method = 'POST';
+        const request = this.$.createPersonRequest;
         request.body = this._newGedcomx;
-        request.addEventListener('response', (e) => {
-          this._loading = false;
-          const response = e.detail.response;
-          if(response.statusCode === 201) {
-            this._selectPerson(response.headers['x-entity-id'], this.gender);
-          }
-        });
-        request.ready();
         request.generateRequest();
+      }
+      
+      /**
+       * Handle the response of a request to create a person
+       */
+      _handleCreatePersonResponse(e) {
+        const response = e.detail.response;
+        if(response.statusCode === 201) {
+          this._selectPerson(response.headers['x-entity-id'], this.gender);
+        }
       }
       
       /**
