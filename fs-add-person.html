@@ -8,6 +8,7 @@
 <link rel="import" href="../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../fs-api-aware/fs-api-aware.html">
 <link rel="import" href="../fs-person-gender/fs-person-gender-selector.html">
 <link rel="import" href="../fs-date/fs-date.html">
 <link rel="import" href="../fs-place/fs-place.html">
@@ -158,11 +159,13 @@
     </paper-dialog>
     <fs-request 
       id="searchRequest"
+      client-name="[[clientName]]"
       loading="{{_loading}}"
       headers='{"Accept":"application/x-gedcomx-atom+json"}'
       on-response="_handleSearchResponse"></fs-request>
     <fs-request
       id="createPersonRequest"
+      client-name="[[clientName]]"
       loading="{{_loading}}"
       method="POST"
       url="/platform/tree/persons"
@@ -239,7 +242,8 @@
      * @polymer
      * @demo demo/index.html
      */
-    class FsAddPerson extends Polymer.Element {
+    class FsAddPerson extends FSApiAwareMixin(Polymer.Element) {
+      
       static get is() { return 'fs-add-person'; }
       
       /**
@@ -813,6 +817,7 @@
         request.url = url;
         request.method = 'POST';
         request.body = body;
+        request.clientName = this.clientName;
         request.delegateEvents(this);
         return request;
       }
@@ -847,6 +852,7 @@
         return new Promise((resolve, reject) => {
           const request = document.createElement('fs-request');
           request.url = `/platform/tree/persons/${childId}/parents`;
+          request.clientName = this.clientName;
           request.delegateEvents(this);
           request.addEventListener('response', (e) => {
             const response = e.detail.response;
