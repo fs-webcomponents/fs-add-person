@@ -109,7 +109,7 @@
         <div class="row gender-living">
           <div class="gender">
             <div>Gender</div>
-            <fs-person-gender-selector gender="{{gender}}"></fs-person-gender-selector>
+            <fs-person-gender-selector disabled="{{_disableGender(gender, disableGender)}}" gender="{{gender}}"></fs-person-gender-selector>
           </div>
           <div>
             <div>Living</div>
@@ -149,7 +149,7 @@
         </div>
       </div>
       <div class="buttons">
-        <paper-button on-tap="close">Cancel</paper-button>
+        <paper-button on-tap="_cancel">Cancel</paper-button>
         <paper-button id="next-btn" raised disabled="[[!_searchReady]]" hidden="[[!_showDataStep(_step)]]" on-tap="_search">Next</paper-button>
         <paper-button raised hidden="[[!_showResultsStep(_step)]]" on-tap="_refine">Refine Search</paper-button>
       </div>
@@ -302,6 +302,21 @@
            */
           caprIds: Array,
           
+          /**
+           * Disable the gender selection so that the user can't choose the
+           * gender. This is useful when adding a person to a couple because
+           * there is only one valid gender. I.e., if the wife is alredy known
+           * then the new person must be a male.
+           * 
+           * The gender selection will only be disabled if this property is set
+           * to true and a gender value is provided (gender is required and we 
+           * don't want to disable a required field unless we have a value).
+           */
+          disableGender: {
+            type: Boolean,
+            value: false
+          },
+          
           /** Whether the search request is loading */
           _loading: Boolean,
           
@@ -360,6 +375,10 @@
       /** Reset the element, removing any input values and relationship IDs **/
       reset() {
         this.opened = false;
+        // The gender selection needs to be enabled before we clear the gender,
+        // otherwise the inputs get into a bad state that.
+        // https://github.com/fs-webcomponents/fs-add-person/issues/6
+        this.disableGender = false;
         this.firstNames = undefined;
         this.lastNames = undefined;
         this.gender = undefined;
@@ -378,6 +397,12 @@
         this._searchResults = [];
       }
       
+      /** Reset and close the dialog */
+      _cancel() {
+        this.reset();
+        this.close();
+      }
+      
       /**
        * Issue the API request for finding possible duplicates
        */
@@ -392,6 +417,13 @@
        */
       _refine() {
         this._step = 'data';
+      }
+      
+      /**
+       * Calculate whether the gender selection should be disabled.
+       */
+      _disableGender(gender, disableGender) {
+        return disableGender && !!gender;
       }
       
       /**
